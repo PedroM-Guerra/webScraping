@@ -1,8 +1,10 @@
 import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
+import unicodedata
+import re
 
-from dataBaseInsert import salvar_noticia
+from dataBaseInsert import inserir_noticia_dw, salvar_noticia
 from dataBaseCreate import create_database
 
 def get_news():
@@ -32,6 +34,34 @@ def get_news():
 
     return news_dict
 
+def limpar_texto(texto):
+    # Remove acentos
+    texto = unicodedata.normalize('NFKD', texto).encode('ASCII', 'ignore').decode('ASCII')
+
+    # Remove caracteres especiais (mantém apenas letras, números e espaço)
+    texto = re.sub(r'[^A-Za-z0-9 ]+', '', texto)
+
+    # Coloca em maiúsculo
+    return texto.upper()
+
+def limpar_titulo(titulo):
+    STOPWORDS = {
+        "a", "o", "as", "os", "de", "do", "da", "das", "dos", "em", "no", "na", "nos", "nas",
+        "por", "para", "com", "um", "uma", "uns", "umas", "e", "ou", "que", "se", "é", "ao"
+    }
+    # Remove acentos
+    titulo = unicodedata.normalize('NFKD', titulo).encode('ASCII', 'ignore').decode('ASCII')
+
+    # Remove caracteres especiais
+    titulo = re.sub(r'[^A-Za-z0-9 ]+', '', titulo)
+
+    # Remove stopwords
+    palavras = titulo.split()
+    palavras_filtradas = [p for p in palavras if p.lower() not in STOPWORDS]
+
+    # Junta e coloca em maiúsculo
+    return " ".join(palavras_filtradas).upper()
+
 def access_news(newsUrl):
     page = requests.get(newsUrl)
     soup = BeautifulSoup(page.text, 'html.parser')
@@ -40,12 +70,19 @@ def access_news(newsUrl):
     category, title, siteUrl  = get_categoria(soup, newsUrl)
     date, year, month, day, week, trimester, quadrimester, semester = get_date(soup)
 
+    # Não inclui notícias sem data
+    if date == "0001-01-01 00:00:00":
+        return
+    
+     # Tratar título e nome do site
+    title = limpar_titulo(title)
+    siteName = limpar_texto(siteName)
+
     print_info(siteName, category, title, newsUrl, date, year, month, day, week, trimester, quadrimester, semester)
 
     salvar_noticia(title, newsUrl, date, category, siteName, siteUrl, day, month, year, week, quadrimester, semester, trimester)
+    inserir_noticia_dw(title, newsUrl, date, category, siteName, siteUrl, day, month, year, week, quadrimester, semester, trimester)
 
-
-    
 def print_info(siteName, category, title, newsUrl, date, year, month, day, week, trimester, quadrimester, semester):
     print("\n--------------------------------------------------------")
 
