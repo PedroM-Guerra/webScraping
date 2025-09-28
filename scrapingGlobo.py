@@ -2,14 +2,12 @@ import requests
 from bs4 import BeautifulSoup
 from datetime import datetime
 
-from dbTest import salvar_noticia
-
-
-
-#import sqlite3
-#conn = sqlite3.connect('noticias.db')
+from dataBaseInsert import salvar_noticia
+from dataBaseCreate import create_database
 
 def get_news():
+    create_database()
+
     url = 'https://www.globo.com/'
 
     page = requests.get(url)
@@ -39,12 +37,13 @@ def access_news(newsUrl):
     soup = BeautifulSoup(page.text, 'html.parser')
     
     siteName = get_veiculo(soup, newsUrl)
-    category, title  = get_categoria(soup)
+    category, title, siteUrl  = get_categoria(soup, newsUrl)
     date, year, month, day, week, trimester, quadrimester, semester = get_date(soup)
 
     print_info(siteName, category, title, newsUrl, date, year, month, day, week, trimester, quadrimester, semester)
 
-    salvar_noticia(siteName,newsUrl, category, title,  date)
+    salvar_noticia(title, newsUrl, date, category, siteName, siteUrl, day, month, year, week, quadrimester, semester, trimester)
+
 
     
 def print_info(siteName, category, title, newsUrl, date, year, month, day, week, trimester, quadrimester, semester):
@@ -74,27 +73,27 @@ def get_veiculo(soup, url_noticia):
 
     return nomeSite
 
-def get_categoria(soup):
-    categories = []
-    title = "NA"
+def get_categoria(soup, url):
+    # Extrai siteUrl e categoria pela URL
+    try:
+        # Remove 'https://' ou 'http://'
+        url_path = url.split('//')[-1]
+        # Separa pelo '/' e pega o primeiro elemento (índice 0) para siteUrl
+        site_url = url_path.split('/')[0] if len(url_path.split('/')) > 0 else "NA"
+        # Pega o segundo elemento (índice 1) para categoria
+        categoria_url = url_path.split('/')[1] if len(url_path.split('/')) > 1 else "NA"
+    except Exception:
+        site_url = "NA"
+        categoria_url = "NA"
 
-    #categoria
-    meta_categorias = soup.find_all("meta", property="article:section")
-    if meta_categorias:
-        for meta in meta_categorias:
-            if meta.get("content"):
-                categories.append(meta['content'])
-
-    category = ", ".join(categories) if categories else "NA"
-
-    #titulo
+    # Título
     title = soup.title.string if soup.title else "NA"
-    
 
-    return category, title
+    return categoria_url, title, site_url
 
 def get_date(soup):
-    dt_str = year = month = day = week = trimester = quadrimester = semester = "NA"
+    dt_str = dt_str = "0001-01-01 00:00:00"
+    year = month = day = week = trimester = quadrimester = semester = 0
 
     #data
     date = soup.find('time', itemprop='datePublished')
@@ -114,5 +113,5 @@ def get_date(soup):
     return dt_str, year, month, day, week, trimester, quadrimester, semester
     
 get_news()
-#conn.close()
+
 
