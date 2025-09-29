@@ -80,6 +80,7 @@ def access_news(newsUrl):
 
     print_info(siteName, category, title, newsUrl, date, year, month, day, week, trimester, quadrimester, semester)
 
+    #salva num banco normal e num data warehouse
     salvar_noticia(title, newsUrl, date, category, siteName, siteUrl, day, month, year, week, quadrimester, semester, trimester)
     inserir_noticia_dw(title, newsUrl, date, category, siteName, siteUrl, day, month, year, week, quadrimester, semester, trimester)
 
