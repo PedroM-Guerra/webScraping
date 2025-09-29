@@ -66,7 +66,7 @@ def access_news(newsUrl):
     page = requests.get(newsUrl)
     soup = BeautifulSoup(page.text, 'html.parser')
     
-    siteName = get_veiculo(soup, newsUrl)
+    siteName = get_veiculo(soup)
     category, title, siteUrl  = get_categoria(soup, newsUrl)
     date, year, month, day, week, trimester, quadrimester, semester = get_date(soup)
 
@@ -100,7 +100,7 @@ def print_info(siteName, category, title, newsUrl, date, year, month, day, week,
     print(f"Quadrimestre: {quadrimester}")
     print(f"Semestre: {semester}")
 
-def get_veiculo(soup, url_noticia):
+def get_veiculo(soup):
     nomeSite = "NA"
 
     #nome site
